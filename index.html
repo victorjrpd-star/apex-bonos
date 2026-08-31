@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Bonos Digitales Apex</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --card-bg: #1a1d24;
+            --accent: #d4af37;
+            --accent-hover: #b3922f;
+            --text-main: #f0f0f5;
+            --text-muted: #9ba1a6;
+            --border: #2c323d;
+            --danger: #e74c3c;
+            --success: #2ecc71;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        header h1 {
+            color: var(--accent);
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+        }
+
+        .user-info {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        .btn {
+            background-color: var(--accent);
+            color: #000;
+            border: none;
+            padding: 0.6rem 1.2rem;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--accent-hover);
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            border: 1px solid var(--border);
+            color: var(--text-main);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--border);
+        }
+
+        .btn-danger {
+            background-color: var(--danger);
+            color: #fff;
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: #fff;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 0.8rem;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            color: var(--text-main);
+            font-size: 1rem;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        @media(max-width: 768px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.8rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            color: var(--accent);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        /* Generador de Imagen de Bono */
+        .coupon-canvas-container {
+            width: 400px;
+            height: 600px;
+            position: relative;
+            background-size: cover;
+            background-position: center;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 2px solid var(--accent);
+            margin: 1rem auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        .coupon-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(15,17,21,0.95) 60%, rgba(15,17,21,0.4));
+            padding: 2rem 1.5rem 1.5rem 1.5rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+
+        .coupon-badge {
+            background-color: var(--accent);
+            color: #000;
+            font-weight: bold;
+            padding: 0.2rem 0.6rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            align-self: flex-start;
+            text-transform: uppercase;
+        }
+
+        .auth-container {
+            max-width: 400px;
+            margin: 4rem auto;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1.5rem;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 0.5rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+        }
+
+        .tab-btn.active {
+            background-color: var(--border);
+            color: var(--accent);
+        }
+
+        .funnel-stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            background: var(--bg-color);
+            border: 1px solid var(--border);
+            padding: 1rem;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-card h3 {
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 0.3rem;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>APEX DIGITAL BONOS</h1>
+        <div class="user-info" id="userInfoHeader" class="hidden">
+            <span id="headerRoleName"></span>
+            <button class="btn btn-secondary" onclick="logout()">Cerrar Sesión</button>
+        </div>
+    </header>
+
+    <main>
+        <section id="loginView" class="auth-container card">
+            <h2 style="margin-bottom: 1.5rem; color: var(--accent); text-align: center;">Iniciar Sesión</h2>
+            <div class="form-group">
+                <label>Seleccionar Rol</label>
+                <select id="loginRole" onchange="toggleLoginInputs()">
+                    <option value="admin">Administrador</option>
+                    <option value="user">Usuario Final (Beneficiario)</option>
+                    <option value="establishment">Establecimiento Comercial</option>
+                </select>
+            </div>
+            
+            <div id="adminLoginFields">
+                <div class="form-group">
+                    <label>Usuario Admin</label>
+                    <input type="text" id="adminUser" value="admin">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="adminPass" value="admin123">
+                </div>
+            </div>
+
+            <div id="userLoginFields" class="hidden">
+                <div class="form-group">
+                    <label>Usuario (Nombre de Usuario generado)</label>
+                    <input type="text" id="loginUsername" placeholder="Ej: carlos_perez">
+                </div>
+                <div class="form-group">
+                    <label>Contraseña Temporal</label>
+                    <input type="password" id="loginPassword" placeholder="Contraseña de 6 dígitos">
+                </div>
+            </div>
+
+            <div id="establishmentLoginFields" class="hidden">
+                <div class="form-group">
+                    <label>Seleccionar Establecimiento</label>
+                    <select id="selectEstablishmentLogin"></select>
+                </div>
+                <div class="form-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="estPass" value="1234">
+                </div>
+            </div>
+
+            <button class="btn" style="width: 100%; margin-top: 1rem;" onclick="login()">Ingresar al Sistema</button>
+            <p style="margin-top: 1rem; font-size: 0.8rem; text-align: center; color: var(--text-muted);">
+                * Entorno de pruebas local interconectado. Abre varias pestañas para probar en simultáneo.
+            </p>
+        </section>
+
+        <section id="adminDashboard" class="hidden">
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchAdminTab('promos')">Promociones y Términos</button>
+                <button class="tab-btn" onclick="switchAdminTab('establishments')">Establecimientos</button>
+                <button class="tab-btn" onclick="switchAdminTab('users')">Generar Bonos / Usuarios</button>
+                <button class="tab-btn" onclick="switchAdminTab('funnel')">Embudo de Ventas</button>
+            </div>
+
+            <div id="adminTab-promos" class="admin-tab-content">
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Crear Nueva Promoción / Bono</h3>
+                    <div class="grid-2">
+                        <div>
+                            <div class="form-group">
+                                <label>Título de la Promoción</label>
+                                <input type="text" id="promoTitle" placeholder="Ej: 50% Descuento en Strikers">
+                            </div>
+                            <div class="form-group">
+                                <label>Términos y Condiciones</label>
+                                <textarea id="promoTerms" rows="4" placeholder="Válido por 30 días. No acumulable con otras ofertas."></textarea>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="form-group">
+                                <label>Asociar a Establecimiento</label>
+                                <select id="promoEstablishment"></select>
+                            </div>
+                            <div class="form-group">
+                                <label>URL de Imagen Promocional (Fondo del Bono)</label>
+                                <input type="text" id="promoImage" placeholder="https://images.unsplash.com/..." value="https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600">
+                            </div>
+                            <button class="btn" style="margin-top: 1.5rem; width: 100%;" onclick="createPromo()">Guardar Promoción</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Promociones Activas</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Título</th>
+                                <th>Establecimiento</th>
+                                <th>Términos</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="promosTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adminTab-establishments" class="admin-tab-content hidden">
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Crear Cuenta de Establecimiento</h3>
+                    <div class="form-group">
+                        <label>Nombre del Establecimiento / Local</label>
+                        <input type="text" id="estName" placeholder="Ej: Gimnasio Central Cali">
+                    </div>
+                    <div class="form-group">
+                        <label>Contraseña de Acceso</label>
+                        <input type="password" id="estPasswordSetup" value="1234">
+                    </div>
+                    <button class="btn" onclick="createEstablishment()">Registrar Establecimiento</button>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Establecimientos Registrados</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>ID Cuenta</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="establishmentsTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adminTab-users" class="admin-tab-content hidden">
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Asignar Bono a Usuario Final</h3>
+                    <div class="grid-2">
+                        <div>
+                            <div class="form-group">
+                                <label>Nombre Completo del Beneficiario</label>
+                                <input type="text" id="beneficiaryName" placeholder="Ej: Carlos Pérez">
+                            </div>
+                            <div class="form-group">
+                                <label>Seleccionar Promoción / Bono</label>
+                                <select id="assignPromoSelect" onchange="previewCouponCard()"></select>
+                            </div>
+                            <button class="btn" style="margin-top: 1rem; width: 100%;" onclick="generateUserAndCoupon()">Generar Usuario y Tarjeta de Bono</button>
+                        </div>
+                        <div>
+                            <label>Vista Previa de la Imagen Digital Generada</label>
+                            <div id="couponPreviewContainer">
+                                <div id="renderableCoupon" class="coupon-canvas-container" style="background-image: url('https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600');">
+                                    <div class="coupon-overlay">
+                                        <span class="coupon-badge" id="previewBadge">Promoción</span>
+                                        <h3 id="previewTitle" style="color: var(--accent); font-size: 1.2rem;">Título Bono</h3>
+                                        <p id="previewTerms" style="font-size: 0.8rem; color: var(--text-muted);">Términos y condiciones...</p>
+                                        <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                                            <span>Asignado a: <strong id="previewUser" style="color: #fff;">Nombre</strong></span>
+                                            <span>Acceso: <strong id="previewCreds" style="color: var(--accent);">user / pass</strong></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="downloadBtn" class="btn btn-secondary hidden" style="width: 100%; margin-top: 0.5rem;" onclick="downloadCouponImage()">Descargar Imagen para WhatsApp</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3 style="margin-bottom: 1rem; color: var(--accent);">Usuarios y Bonos Activos (Pendientes de Redimir)</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Usuario</th>
+                                <th>Contraseña</th>
+                                <th>Beneficiario</th>
+                                <th>Promoción</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div id="adminTab-funnel" class="admin-tab-content hidden">
+                <div class="card">
+                    <h3 style="margin-bottom: 1.5rem; color: var(--accent);">Embudo de Ventas Gráfico y Métricas</h3>
+                    <div class="funnel-stats">
+                        <div class="stat-card">
+                            <h3 id="statTotal">0</h3>
+                            <p>Bonos Creados / Asignados</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="statRequested" style="color: #f39c12;">0</h3>
+                            <p>Solicitados (En Redención)</p>
+                        </div>
+                        <div class="stat-card">
+                            <h3 id="statRedeemed" style="color: var(--success);">0</h3>
+                            <p>Bonos Redimidos Exitosos</p>
+                        </div>
+                    </div>
+                    
+                    <div style="background: var(--bg-color); padding: 1.5rem; border-radius: 6px; border: 1px solid var(--border);">
+                        <h4 style="margin-bottom: 1rem;">Progreso Visual del Embudo</h4>
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
+                                <span>1. Asignados al Usuario</span>
+                                <span id="funnelStep1Val">0%</span>
+                            </div>
+                            <div style="background: var(--border); height: 16px; border-radius: 8px; overflow: hidden;">
+                                <div id="funnelBar1" style="background: var(--accent); width: 0%; height: 100%; transition: width 0.5s;"></div>
+                            </div>
+                        </div>
+                        <div style="margin-bottom: 1rem;">
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
+                                <span>2. Solicitados al Establecimiento</span>
+                                <span id="funnelStep2Val">0%</span>
+                            </div>
+                            <div style="background: var(--border); height: 16px; border-radius: 8px; overflow: hidden;">
+                                <div id="funnelBar2" style="background: #f39c12; width: 0%; height: 100%; transition: width 0.5s;"></div>
+                            </div>
+                        </div>
+                        <div>
+                            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.3rem;">
+                                <span>3. Redimidos Completados</span>
+                                <span id="funnelStep3Val">0%</span>
+                            </div>
+                            <div style="background: var(--border); height: 16px; border-radius: 8px; overflow: hidden;">
+                                <div id="funnelBar3" style="background: var(--success); width: 0%; height: 100%; transition: width 0.5s;"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="userDashboard" class="hidden">
+            <div class="card">
+                <h2 style="color: var(--accent); margin-bottom: 0.5rem;">Mis Bonos Digitales Asignados</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Aquí puedes visualizar el bono que te fue otorgado y solicitar su redención al establecimiento comercial.</p>
+                <div id="userBonusesList"></div>
+            </div>
+        </section>
+
+        <section id="establishmentDashboard" class="hidden">
+            <div class="card">
+                <h2 style="color: var(--accent); margin-bottom: 0.5rem;">Bandeja de Solicitudes de Redención</h2>
+                <p style="color: var(--text-muted); margin-bottom: 1.5rem;">Los usuarios que desean redimir su bono aparecerán aquí en tiempo real.</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Beneficiario</th>
+                            <th>Promoción</th>
+                            <th>Estado</th>
+                            <th>Acciones de Confirmación</th>
+                        </tr>
+                    </thead>
+                    <tbody id="establishmentRequestsBody"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // --- BASE DE DATOS LOCAL (Simulada con localStorage) ---
+        const DB = {
+            get(key) { return JSON.parse(localStorage.getItem('apex_' + key)) || []; },
+            set(key, val) { localStorage.setItem('apex_' + key, JSON.stringify(val)); }
+        };
+
+        // Inicializar datos predeterminados si está vacío
+        if (!localStorage.getItem('apex_establishments')) {
+            DB.set('establishments', [
+                { id: 'est_1', name: 'Gimnasio Apex Central', pass: '1234' },
+                { id: 'est_2', name: 'Strikers Academy Norte', pass: '1234' }
+            ]);
+        }
+        if (!localStorage.getItem('apex_promos')) {
+            DB.set('promos', [
+                { id: 'promo_1', title: 'Entrenamiento Gratuito Kickboxing', terms: 'Válido por una sesión guiada. Presentar código de acceso.', estId: 'est_1', img: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=600' }
+            ]);
+        }
+        if (!localStorage.getItem('apex_users')) {
+            DB.set('users', []);
+        }
+
+        let currentUser = null;
+
+        // --- CONTROL DE LOGIN Y ROLES ---
+        function toggleLoginInputs() {
+            const role = document.getElementById('loginRole').value;
+            document.getElementById('adminLoginFields').classList.toggle('hidden', role !== 'admin');
+            document.getElementById('userLoginFields').classList.toggle('hidden', role !== 'user');
+            document.getElementById('establishmentLoginFields').classList.toggle('hidden', role !== 'establishment');
+            
+            if(role === 'establishment') {
+                const ests = DB.get('establishments');
+                const select = document.getElementById('selectEstablishmentLogin');
+                select.innerHTML = ests.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            }
+        }
+        toggleLoginInputs();
+
+        function login() {
+            const role = document.getElementById('loginRole').value;
+            if (role === 'admin') {
+                const u = document.getElementById('adminUser').value;
+                const p = document.getElementById('adminPass').value;
+                if(u === 'admin' && p === 'admin123') {
+                    currentUser = { role: 'admin', name: 'Administrador Maestro' };
+                    startSession();
+                } else {
+                    alert('Credenciales de administrador incorrectas');
+                }
+            } else if (role === 'user') {
+                const uname = document.getElementById('loginUsername').value.trim();
+                const pass = document.getElementById('loginPassword').value.trim();
+                const users = DB.get('users');
+                const found = users.find(x => x.username === uname && x.password === pass);
+                if(found) {
+                    currentUser = { role: 'user', ...found };
+                    startSession();
+                } else {
+                    alert('Usuario o contraseña incorrectos');
+                }
+            } else if (role === 'establishment') {
+                const estId = document.getElementById('selectEstablishmentLogin').value;
+                const pass = document.getElementById('estPass').value;
+                const ests = DB.get('establishments');
+                const found = ests.find(e => e.id === estId && e.pass === pass);
+                if(found) {
+                    currentUser = { role: 'establishment', ...found };
+                    startSession();
+                } else {
+                    alert('Contraseña de establecimiento incorrecta');
+                }
+            }
+        }
+
+        function startSession() {
+            document.getElementById('loginView').classList.add('hidden');
+            document.getElementById('userInfoHeader').classList.remove('hidden');
+            document.getElementById('headerRoleName').innerText = `${currentUser.name} (${currentUser.role.toUpperCase()})`;
+
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+            document.getElementById('establishmentDashboard').classList.add('hidden');
+
+            if(currentUser.role === 'admin') {
+                document.getElementById('adminDashboard').classList.remove('hidden');
+                loadAdminData();
+            } else if(currentUser.role === 'user') {
+                document.getElementById('userDashboard').classList.remove('hidden');
+                loadUserBonuses();
+            } else if(currentUser.role === 'establishment') {
+                document.getElementById('establishmentDashboard').classList.remove('hidden');
+                loadEstablishmentRequests();
+            }
+        }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('userInfoHeader').classList.add('hidden');
+            document.getElementById('loginView').classList.remove('hidden');
+            document.querySelectorAll('main > section:not(#loginView)').forEach(s => s.classList.add('hidden'));
+        }
+
+        // --- ADMINISTRADOR: TABS Y FUNCIONALIDAD ---
+        function switchAdminTab(tabName) {
+            document.querySelectorAll('.admin-tab-content').forEach(c => c.classList.add('hidden'));
+            document.querySelectorAll('.admin-tab-content ~ * .tab-btn, .tabs .tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`adminTab-${tabName}`).classList.remove('hidden');
+            event.currentTarget.classList.add('active');
+
+            if(tabName === 'funnel') updateFunnelMetrics();
+        }
+
+        function loadAdminData() {
+            // Cargar selectores de establecimientos y promos
+            const ests = DB.get('establishments');
+            document.getElementById('promoEstablishment').innerHTML = ests.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+            
+            // Tabla establecimientos
+            document.getElementById('establishmentsTableBody').innerHTML = ests.map(e => `
+                <tr><td>${e.name}</td><td>${e.id}</td><td><button class="btn btn-danger" style="padding:0.3rem 0.6rem;font-size:0.8rem;" onclick="deleteEstablishment('${e.id}')">Eliminar</button></td></tr>
+            `).join('');
+
+            // Tabla promos
+            const promos = DB.get('promos');
+            document.getElementById('promosTableBody').innerHTML = promos.map(p => {
+                const est = ests.find(e => e.id === p.estId);
+                return `<tr><td>${p.title}</td><td>${est ? est.name : 'N/A'}</td><td>${p.terms}</td><td><button class="btn btn-danger" style="padding:0.3rem 0.6rem;font-size:0.8rem;" onclick="deletePromo('${p.id}')">Eliminar</button></td></tr>`;
+            }).join('');
+
+            document.getElementById('assignPromoSelect').innerHTML = promos.map(p => `<option value="${p.id}">${p.title}</option>`).join('');
+            previewCouponCard();
+
+            // Tabla usuarios activos
+            const users = DB.get('users');
+            document.getElementById('usersTableBody').innerHTML = users.map(u => `
+                <tr>
+                    <td><code>${u.username}</code></td>
+                    <td><code>${u.password}</code></td>
+                    <td>${u.beneficiary}</td>
+                    <td>${u.promoTitle}</td>
+                    <td><button class="btn btn-danger" style="padding:0.3rem 0.6rem;font-size:0.8rem;" onclick="deleteUser('${u.id}')">Eliminar</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function createEstablishment() {
+            const name = document.getElementById('estName').value.trim();
+            const pass = document.getElementById('estPasswordSetup').value.trim();
+            if(!name) return alert('Ingrese un nombre para el establecimiento');
+            const ests = DB.get('establishments');
+            ests.push({ id: 'est_' + Date.now(), name, pass });
+            DB.set('establishments', ests);
+            document.getElementById('estName').value = '';
+            loadAdminData();
+            alert('Establecimiento creado correctamente.');
+        }
+
+        function deleteEstablishment(id) {
+            let ests = DB.get('establishments');
+            ests = ests.filter(e => e.id !== id);
+            DB.set('establishments', ests);
+            loadAdminData();
+        }
+
+        function createPromo() {
+            const title = document.getElementById('promoTitle').value.trim();
+            const terms = document.getElementById('promoTerms').value.trim();
+            const estId = document.getElementById('promoEstablishment').value;
+            const img = document.getElementById('promoImage').value.trim();
+            if(!title) return alert('Ingrese el título de la promoción');
+            
+            const promos = DB.get('promos');
+            promos.push({ id: 'promo_' + Date.now(), title, terms, estId, img });
+            DB.set('promos', promos);
+            document.getElementById('promoTitle').value = '';
+            document.getElementById('promoTerms').value = '';
+            loadAdminData();
+            alert('Promoción creada con éxito.');
+        }
+
+        function deletePromo(id) {
+            let promos = DB.get('promos');
+            promos = promos.filter(p => p.id !== id);
+            DB.set('promos', promos);
+            loadAdminData();
+        }
+
+        // --- GENERACIÓN DE USUARIO Y TARJETA VISUAL ---
+        function previewCouponCard() {
+            const promoId = document.getElementById('assignPromoSelect').value;
+            const promos = DB.get('promos');
+            const promo = promos.find(p => p.id === promoId);
+            const benName = document.getElementById('beneficiaryName').value.trim() || 'Nombre Beneficiario';
+
+            if(promo) {
+                const container = document.getElementById('renderableCoupon');
+                container.style.backgroundImage = `url('${promo.img}')`;
+                document.getElementById('previewTitle').innerText = promo.title;
+                document.getElementById('previewTerms').innerText = promo.terms;
+                document.getElementById('previewUser').innerText = benName;
+                document.getElementById('previewCreds').innerText = 'Usuario / Contraseña aleatorios';
+            }
+        }
+
+        document.getElementById('beneficiaryName').addEventListener('input', previewCouponCard);
+
+        function generateUserAndCoupon() {
+            const benName = document.getElementById('beneficiaryName').value.trim();
+            const promoId = document.getElementById('assignPromoSelect').value;
+            if(!benName) return alert('Por favor ingrese el nombre de la persona a quien se le asigna el bono.');
+
+            const promos = DB.get('promos');
+            const promo = promos.find(p => p.id === promoId);
+            if(!promo) return alert('Seleccione una promoción válida.');
+
+            // Generar credenciales automáticas
+            const cleanName = benName.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, '_');
+            const username = `${cleanName}_${Math.floor(Math.random() * 900 + 100)}`;
+            const password = Math.floor(100000 + Math.random() * 900000).toString();
+
+            // Actualizar vista previa con credenciales reales para la imagen
+            document.getElementById('previewCreds').innerText = `${username} / ${password}`;
+
+            const newUser = {
+                id: 'user_' + Date.now(),
+                beneficiary: benName,
+                username,
+                password,
+                promoId: promo.id,
+                promoTitle: promo.title,
+                promoTerms: promo.terms,
+                promoImg: promo.img,
+                estId: promo.estId,
+                status: 'asignado' // asignado, solicitado, redimido
+            };
+
+            const users = DB.get('users');
+            users.push(newUser);
+            DB.set('users', users);
+
+            // Mostrar botón de descarga de imagen
+            document.getElementById('downloadBtn').classList.remove('hidden');
+            loadAdminData();
+            alert(`¡Usuario generado con éxito!\nUsuario: ${username}\nContraseña: ${password}`);
+        }
+
+        function downloadCouponImage() {
+            const node = document.getElementById('renderableCoupon');
+            html2canvas(node, { scale: 2, useCORS: true }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'Bono_Digital_Apex.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            });
+        }
+
+        function deleteUser(id) {
+            let users = DB.get('users');
+            users = users.filter(u => u.id !== id);
+            DB.set('users', users);
+            loadAdminData();
+        }
+
+        // --- EMBUDO DE VENTAS ---
+        function updateFunnelMetrics() {
+            const users = DB.get('users');
+            const total = users.length;
+            const requested = users.filter(u => u.status === 'solicitado').length;
+            const redeemed = users.filter(u => u.status === 'redimido').length;
+
+            document.getElementById('statTotal').innerText = total;
+            document.getElementById('statRequested').innerText = requested;
+            document.getElementById('statRedeemed').innerText = redeemed;
+
+            const p1 = total > 0 ? 100 : 0;
+            const p2 = total > 0 ? Math.round((requested / total) * 100) : 0;
+            const p3 = total > 0 ? Math.round((redeemed / total) * 100) : 0;
+
+            document.getElementById('funnelStep1Val').innerText = `${total} (${p1}%)`;
+            document.getElementById('funnelBar1').style.width = `${p1}%`;
+
+            document.getElementById('funnelStep2Val').innerText = `${requested} (${p2}%)`;
+            document.getElementById('funnelBar2').style.width = `${p2}%`;
+
+            document.getElementById('funnelStep3Val').innerText = `${redeemed} (${p3}%)`;
+            document.getElementById('funnelBar3').style.width = `${p3}%`;
+        }
+
+        // --- PANEL DE USUARIO FINAL ---
+        function loadUserBonuses() {
+            const users = DB.get('users');
+            const currentUserData = users.find(u => u.id === currentUser.id);
+            const container = document.getElementById('userBonusesList');
+
+            if(!currentUserData || currentUserData.status === 'redimido') {
+                container.innerHTML = `<p style="color: var(--text-muted);">No tienes bonos activos en este momento o ya fueron redimidos.</p>`;
+                return;
+            }
+
+            container.innerHTML = `
+                <div class="coupon-canvas-container" style="background-image: url('${currentUserData.promoImg}');">
+                    <div class="coupon-overlay">
+                        <span class="coupon-badge">Tu Bono Activo</span>
+                        <h3 style="color: var(--accent); font-size: 1.2rem;">${currentUserData.promoTitle}</h3>
+                        <p style="font-size: 0.8rem; color: var(--text-muted);">${currentUserData.promoTerms}</p>
+                        <div style="border-top: 1px solid var(--border); padding-top: 0.5rem; display: flex; justify-content: space-between; font-size: 0.85rem;">
+                            <span>Beneficiario: <strong style="color: #fff;">${currentUserData.beneficiary}</strong></span>
+                        </div>
+                    </div>
+                </div>
+                <div style="text-align: center; margin-top: 1.5rem;">
+                    ${currentUserData.status === 'asignado' ? 
+                        `<button class="btn btn-success" style="font-size: 1.1rem; padding: 0.8rem 2rem;" onclick="requestRedemption('${currentUserData.id}')">Solicitar Redención al Establecimiento</button>` :
+                        `<p style="color: #f39c12; font-weight: bold;">Solicitud de redención enviada. Esperando confirmación del establecimiento...</p>`
+                    }
+                </div>
+            `;
+        }
+
+        function requestRedemption(userId) {
+            if(confirm('¿Estás seguro de solicitar la redención de este bono al establecimiento?')) {
+                let users = DB.get('users');
+                const idx = users.findIndex(u => u.id === userId);
+                if(idx !== -1) {
+                    users[idx].status = 'solicitado';
+                    DB.set('users', users);
+                    loadUserBonuses();
+                    alert('Solicitud enviada con éxito al establecimiento comercial.');
+                }
+            }
+        }
+
+        // --- PANEL DE ESTABLECIMIENTO COMERCIAL ---
+        function loadEstablishmentRequests() {
+            const users = DB.get('users');
+            // Filtrar bonos que corresponden a este establecimiento y cuyo estado sea 'solicitado'
+            const pendingUsers = users.filter(u => u.estId === currentUser.id && u.status === 'solicitado');
+            const tbody = document.getElementById('establishmentRequestsBody');
+
+            if(pendingUsers.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted);">No hay solicitudes pendientes de redención.</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = pendingUsers.map(u => `
+                <tr>
+                    <td><code>${u.username}</code></td>
+                    <td>${u.beneficiary}</td>
+                    <td>${u.promoTitle}</td>
+                    <td><span style="color: #f39c12; font-weight: bold;">Solicitado</span></td>
+                    <td>
+                        <button class="btn btn-success" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="resolveRedemption('${u.id}', 'redimido')">Aceptar y Redimir</button>
+                        <button class="btn btn-danger" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;" onclick="resolveRedemption('${u.id}', 'asignado')">Rechazar</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function resolveRedemption(userId, newStatus) {
+            const actionText = newStatus === 'redimido' ? 'aceptar y redimir' : 'rechazar';
+            if(confirm(`¿Estás seguro de ${actionText} este bono?`)) {
+                let users = DB.get('users');
+                const idx = users.findIndex(u => u.id === userId);
+                if(idx !== -1) {
+                    users[idx].status = newStatus;
+                    DB.set('users', users);
+                    loadEstablishmentRequests();
+                    alert(newStatus === 'redimido' ? '¡Bono redimido con éxito! El embudo se ha actualizado.' : 'Bono rechazado y devuelto a asignado.');
+                }
+            }
+        }
+    </script>
+</body>
+</html>
